@@ -1,5 +1,6 @@
 package com.brentvatne.react;
 
+import com.facebook.react.bridge.LifecycleEventListener;
 import com.brentvatne.react.ReactVideoView.Events;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReadableMap;
@@ -12,9 +13,12 @@ import com.facebook.react.uimanager.events.RCTEventEmitter;
 import com.yqritc.scalablevideoview.ScalableType;
 
 import javax.annotation.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
-public class ReactVideoViewManager extends SimpleViewManager<ReactVideoView> {
+public class ReactVideoViewManager extends SimpleViewManager<ReactVideoView> implements LifecycleEventListener {
 
     public static final String REACT_CLASS = "RCTVideo";
 
@@ -31,6 +35,8 @@ public class ReactVideoViewManager extends SimpleViewManager<ReactVideoView> {
     public static final String PROP_SEEK = "seek";
     public static final String PROP_RATE = "rate";
 
+    private List<ReactVideoView> simpleVideoViewList = new ArrayList<>();
+
     @Override
     public String getName() {
         return REACT_CLASS;
@@ -38,7 +44,10 @@ public class ReactVideoViewManager extends SimpleViewManager<ReactVideoView> {
 
     @Override
     protected ReactVideoView createViewInstance(ThemedReactContext themedReactContext) {
-        return new ReactVideoView(themedReactContext);
+        themedReactContext.addLifecycleEventListener(this);
+        ReactVideoView simpleVideoView = new ReactVideoView(themedReactContext);
+        simpleVideoViewList.add(simpleVideoView);
+        return simpleVideoView;
     }
 
     @Override
@@ -105,5 +114,28 @@ public class ReactVideoViewManager extends SimpleViewManager<ReactVideoView> {
     @ReactProp(name = PROP_RATE)
     public void setRate(final ReactVideoView videoView, final float rate) {
         videoView.setRateModifier(rate);
+    }
+
+
+    @Override
+    public void onDropViewInstance(ReactVideoView view) {
+        super.onDropViewInstance(view);
+        simpleVideoViewList.remove(view);
+    }
+
+    @Override
+    public void onHostResume() {
+    }
+
+    @Override
+    public void onHostPause() {
+        for( ReactVideoView v : simpleVideoViewList ) {
+            v.setPausedModifier(true);
+        }
+    }
+
+    @Override
+    public void onHostDestroy() {
+
     }
 }
